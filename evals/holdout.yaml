@@ -1,0 +1,221 @@
+- id: holdout-01
+  question: What was our total net fee revenue in 2024?
+  answerable: true
+  ambiguity_tag: gross_vs_net_revenue
+  sql: "SELECT ROUND(-SUM(amount), 2) FROM fact_transaction\n            WHERE transaction_type\
+    \ = 'fee' AND fee_waived = FALSE AND is_reversal = FALSE\n              AND date_part('year',\
+    \ transaction_date) = 2024"
+  expected_result: 3403.23
+  business_definition: Net fee revenue excludes waived fees; 'revenue' without qualification
+    defaults to net, not the naive sum of all fees charged.
+- id: holdout-02
+  question: What was our total net fee revenue in 2025?
+  answerable: true
+  ambiguity_tag: gross_vs_net_revenue
+  sql: "SELECT ROUND(-SUM(amount), 2) FROM fact_transaction\n            WHERE transaction_type\
+    \ = 'fee' AND fee_waived = FALSE AND is_reversal = FALSE\n              AND date_part('year',\
+    \ transaction_date) = 2025"
+  expected_result: 14709.7
+  business_definition: Net fee revenue excludes waived fees.
+- id: holdout-03
+  question: What was total net fee revenue collected from Credit Card accounts in
+    2025?
+  answerable: true
+  ambiguity_tag: gross_vs_net_revenue
+  sql: "SELECT ROUND(-SUM(t.amount), 2) FROM fact_transaction t\n            JOIN\
+    \ dim_account a ON t.account_id = a.account_id\n            JOIN dim_product p\
+    \ ON a.product_id = p.product_id\n            WHERE p.product_name = 'Credit Card'\
+    \ AND t.transaction_type = 'fee'\n              AND t.fee_waived = FALSE AND t.is_reversal\
+    \ = FALSE\n              AND date_part('year', t.transaction_date) = 2025"
+  expected_result: 3202.25
+  business_definition: Net fee revenue excludes waived fees, scoped to a single product.
+- id: holdout-04
+  question: How many transactions posted to the ledger in Q4 2025?
+  answerable: true
+  ambiguity_tag: posting_vs_transaction_date
+  sql: "SELECT COUNT(*) FROM fact_transaction t\n            JOIN dim_account a ON\
+    \ t.account_id = a.account_id\n            WHERE a.is_internal = FALSE\n     \
+    \         AND date_part('year', t.posting_date) = 2025 AND date_part('quarter',\
+    \ t.posting_date) = 4"
+  expected_result: 1007.0
+  business_definition: Ledger/period-close reporting uses posting_date, the date it
+    hit the books.
+- id: holdout-05
+  question: How many transactions did customers initiate in Q4 2025?
+  answerable: true
+  ambiguity_tag: posting_vs_transaction_date
+  sql: "SELECT COUNT(*) FROM fact_transaction t\n            JOIN dim_account a ON\
+    \ t.account_id = a.account_id\n            WHERE a.is_internal = FALSE\n     \
+    \         AND date_part('year', t.transaction_date) = 2025 AND date_part('quarter',\
+    \ t.transaction_date) = 4"
+  expected_result: 1017.0
+  business_definition: Customer-activity reporting uses transaction_date, when the
+    customer acted, not when it settled.
+- id: holdout-06
+  question: What was total transaction volume in Q2 2026, based on posting date?
+  answerable: true
+  ambiguity_tag: posting_vs_transaction_date
+  sql: "SELECT ROUND(SUM(ABS(t.amount)), 2) FROM fact_transaction t\n            JOIN\
+    \ dim_account a ON t.account_id = a.account_id\n            WHERE a.is_internal\
+    \ = FALSE AND t.is_reversal = FALSE\n              AND t.transaction_id NOT IN\
+    \ (\n                  SELECT reversal_of_transaction_id FROM fact_transaction\
+    \ WHERE reversal_of_transaction_id IS NOT NULL\n              )\n            \
+    \  AND date_part('year', t.posting_date) = 2026 AND date_part('quarter', t.posting_date)\
+    \ = 2"
+  expected_result: 1494343.27
+  business_definition: Period-close volume reporting uses posting_date; volume is
+    also net of reversals and internal accounts as standard metric hygiene.
+- id: holdout-07
+  question: How many active customers do we have as of June 30, 2026?
+  answerable: true
+  ambiguity_tag: open_vs_active_account
+  sql: SELECT COUNT(*) FROM dim_customer WHERE is_active = TRUE
+  expected_result: 118.0
+  business_definition: '''Active'' means behavioral recency (a transaction in the
+    trailing 90 days), not merely holding a non-closed account.'
+- id: holdout-08
+  question: How many customers have at least one open account?
+  answerable: true
+  ambiguity_tag: open_vs_active_account
+  sql: "SELECT COUNT(DISTINCT c.customer_id) FROM dim_customer c\n            JOIN\
+    \ dim_account a ON a.customer_id = c.customer_id\n            WHERE a.status =\
+    \ 'open'"
+  expected_result: 149.0
+  business_definition: This is deliberately the structural (open-account) reading,
+    contrasted with holdout-07's behavioral reading of the same population.
+- id: holdout-09
+  question: How many active customers do we have in the GTA-West region?
+  answerable: true
+  ambiguity_tag: open_vs_active_account
+  sql: SELECT COUNT(*) FROM dim_customer WHERE is_active = TRUE AND region = 'GTA-West'
+  expected_result: 28.0
+  business_definition: '''Active'' means behavioral recency, scoped to a region.'
+- id: holdout-10
+  question: What was the average daily deposit account balance in June 2026?
+  answerable: true
+  ambiguity_tag: month_end_vs_avg_daily_balance
+  sql: SELECT ROUND(AVG(balance_amount), 2) FROM fact_daily_balance WHERE balance_date
+    BETWEEN '2026-06-01' AND '2026-06-30'
+  expected_result: 7559.5
+  business_definition: Average daily balance is the mean of every day's balance across
+    the period, distinct from a single point-in-time snapshot.
+- id: holdout-11
+  question: What was the total deposit balance across all accounts as of June 30,
+    2026?
+  answerable: true
+  ambiguity_tag: month_end_vs_avg_daily_balance
+  sql: SELECT ROUND(SUM(balance_amount), 2) FROM fact_daily_balance WHERE balance_date
+    = '2026-06-30'
+  expected_result: 1069364.26
+  business_definition: Month-end balance is a snapshot on the last calendar day, deliberately
+    contrasted with holdout-10's average over the same month.
+- id: holdout-12
+  question: What was the average daily balance in May 2026 for deposit accounts?
+  answerable: true
+  ambiguity_tag: month_end_vs_avg_daily_balance
+  sql: SELECT ROUND(AVG(balance_amount), 2) FROM fact_daily_balance WHERE balance_date
+    BETWEEN '2026-05-01' AND '2026-05-31'
+  expected_result: 7597.06
+  business_definition: Average daily balance is the mean across every day in the period.
+- id: holdout-13
+  question: What is our delinquency rate (30+ days past due) for the active loan portfolio
+    as of June 2026?
+  answerable: true
+  ambiguity_tag: written_off_loans
+  sql: "WITH latest AS (\n                SELECT loan_account_id, days_past_due,\n\
+    \                       ROW_NUMBER() OVER (PARTITION BY loan_account_id ORDER\
+    \ BY payment_date DESC) AS rn\n                FROM fact_loan_payment WHERE payment_date\
+    \ <= '2026-06-30'\n            )\n            SELECT ROUND(100.0 * SUM(CASE WHEN\
+    \ l.days_past_due >= 30 THEN 1 ELSE 0 END) / COUNT(*), 2)\n            FROM latest\
+    \ l JOIN dim_account a ON l.loan_account_id = a.account_id\n            WHERE\
+    \ l.rn = 1 AND a.write_off_flag = FALSE"
+  expected_result: 10.0
+  business_definition: Delinquency rate is scoped to the active loan book; written-off
+    loans have moved to a separate charge-off process and are excluded from both numerator
+    and denominator.
+- id: holdout-14
+  question: How many loans in our active portfolio are 60+ days past due, as of June
+    2026?
+  answerable: true
+  ambiguity_tag: written_off_loans
+  sql: "WITH latest AS (\n                SELECT loan_account_id, days_past_due,\n\
+    \                       ROW_NUMBER() OVER (PARTITION BY loan_account_id ORDER\
+    \ BY payment_date DESC) AS rn\n                FROM fact_loan_payment WHERE payment_date\
+    \ <= '2026-06-30'\n            )\n            SELECT COUNT(*) FROM latest l JOIN\
+    \ dim_account a ON l.loan_account_id = a.account_id\n            WHERE l.rn =\
+    \ 1 AND a.write_off_flag = FALSE AND l.days_past_due >= 60"
+  expected_result: 1.0
+  business_definition: Active-portfolio delinquency count excludes written-off loans.
+- id: holdout-15
+  question: What was total transaction volume (dollar amount) in 2025, net of reversals?
+  answerable: true
+  ambiguity_tag: reversed_transactions
+  sql: "SELECT ROUND(SUM(ABS(t.amount)), 2) FROM fact_transaction t\n            WHERE\
+    \ date_part('year', t.transaction_date) = 2025 AND t.is_reversal = FALSE\n   \
+    \           AND t.transaction_id NOT IN (\n                  SELECT reversal_of_transaction_id\
+    \ FROM fact_transaction WHERE reversal_of_transaction_id IS NOT NULL\n       \
+    \       )"
+  expected_result: 2879515.55
+  business_definition: A reversed transaction represents zero net economic activity;
+    the pair is netted out rather than counted twice.
+- id: holdout-16
+  question: How many transactions from 2025 were later reversed?
+  answerable: true
+  ambiguity_tag: reversed_transactions
+  sql: "SELECT COUNT(DISTINCT r.reversal_of_transaction_id) FROM fact_transaction\
+    \ r\n            JOIN fact_transaction o ON r.reversal_of_transaction_id = o.transaction_id\n\
+    \            WHERE date_part('year', o.transaction_date) = 2025"
+  expected_result: 64.0
+  business_definition: Counts distinct original transactions that were later reversed,
+    regardless of when the reversal itself posted.
+- id: holdout-17
+  question: What was total customer transaction volume in 2025?
+  answerable: true
+  ambiguity_tag: internal_accounts
+  sql: "SELECT ROUND(SUM(ABS(t.amount)), 2) FROM fact_transaction t\n            JOIN\
+    \ dim_account a ON t.account_id = a.account_id\n            WHERE a.is_internal\
+    \ = FALSE AND t.is_reversal = FALSE\n              AND t.transaction_id NOT IN\
+    \ (\n                  SELECT reversal_of_transaction_id FROM fact_transaction\
+    \ WHERE reversal_of_transaction_id IS NOT NULL\n              )\n            \
+    \  AND date_part('year', t.transaction_date) = 2025"
+  expected_result: 2746989.32
+  business_definition: '''Customer'' transaction volume excludes the bank''s own internal/GL
+    accounts, which aren''t customer activity.'
+- id: holdout-18
+  question: How many transactions did customers make in 2025?
+  answerable: true
+  ambiguity_tag: internal_accounts
+  sql: "SELECT COUNT(*) FROM fact_transaction t\n            JOIN dim_account a ON\
+    \ t.account_id = a.account_id\n            WHERE a.is_internal = FALSE AND date_part('year',\
+    \ t.transaction_date) = 2025"
+  expected_result: 2749.0
+  business_definition: Customer transaction count excludes internal/GL account activity.
+- id: holdout-19
+  question: What was total transaction volume attributed to the Ottawa Downtown branch
+    in 2025, based on customers' home branch?
+  answerable: true
+  ambiguity_tag: customer_vs_branch_location
+  sql: "SELECT ROUND(SUM(ABS(t.amount)), 2) FROM fact_transaction t\n            JOIN\
+    \ dim_account a ON t.account_id = a.account_id\n            JOIN dim_branch b\
+    \ ON a.home_branch_id = b.branch_id\n            WHERE b.branch_name = 'Ottawa\
+    \ Downtown' AND a.is_internal = FALSE AND t.is_reversal = FALSE\n            \
+    \  AND t.transaction_id NOT IN (\n                  SELECT reversal_of_transaction_id\
+    \ FROM fact_transaction WHERE reversal_of_transaction_id IS NOT NULL\n       \
+    \       )\n              AND date_part('year', t.transaction_date) = 2025"
+  expected_result: 395628.1
+  business_definition: Branch performance reporting attributes volume to the customer's
+    home/registered branch, reflecting the relationship, not where a transaction physically
+    happened.
+- id: holdout-20
+  question: How many transactions physically occurred at the King Street branch in
+    2025, regardless of the customer's home branch?
+  answerable: true
+  ambiguity_tag: customer_vs_branch_location
+  sql: "SELECT COUNT(*) FROM fact_transaction t\n            JOIN dim_account a ON\
+    \ t.account_id = a.account_id\n            JOIN dim_branch b ON t.branch_id =\
+    \ b.branch_id\n            WHERE b.branch_name = 'King Street' AND a.is_internal\
+    \ = FALSE\n              AND date_part('year', t.transaction_date) = 2025"
+  expected_result: 437.0
+  business_definition: Foot-traffic / operational-load reporting attributes activity
+    to the branch where the transaction actually occurred, deliberately contrasted
+    with holdout-19's home-branch attribution.

@@ -1,0 +1,63 @@
+- id: oos-holdout-01
+  question: What is our current regulatory capital adequacy ratio (CAR)?
+  answerable: false
+  ambiguity_tag: null
+  sql: null
+  expected_result: null
+  business_definition: Regulatory capital data is not modeled in this warehouse at
+    all; no valid query exists.
+- id: oos-holdout-02
+  question: Which customers are likely to default on their loan in the next 6 months?
+  answerable: false
+  ambiguity_tag: null
+  sql: null
+  expected_result: null
+  business_definition: Requires a predictive/risk model; no such model or scored output
+    exists in the warehouse.
+- id: oos-holdout-03
+  question: What is the total number of transactions processed by each teller today?
+  answerable: false
+  ambiguity_tag: null
+  sql: null
+  expected_result: null
+  business_definition: No teller/employee dimension exists in the schema.
+- id: oos-holdout-04
+  question: How does our net interest margin compare to Scotiabank's this quarter?
+  answerable: false
+  ambiguity_tag: null
+  sql: null
+  expected_result: null
+  business_definition: Competitor financial data is out of domain entirely; not something
+    this warehouse could ever contain.
+- id: oos-holdout-05
+  question: What is the projected loan default rate for next year under a recession
+    scenario?
+  answerable: false
+  ambiguity_tag: null
+  sql: null
+  expected_result: null
+  business_definition: Requires forecasting/scenario modeling; the warehouse holds
+    historical facts, not projections.
+- id: oos-holdout-06
+  question: Show me total transaction volume by customer's marital status.
+  answerable: false
+  ambiguity_tag: null
+  sql: null
+  expected_result: null
+  business_definition: No marital-status attribute exists on dim_customer; the dimension
+    doesn't exist.
+- id: oos-holdout-07
+  question: What was total headcount cost for the Ottawa Downtown branch last year?
+  answerable: false
+  ambiguity_tag: null
+  sql: null
+  expected_result: null
+  business_definition: HR/payroll cost data is out of domain entirely; not modeled
+    anywhere in this warehouse.
+- id: oos-holdout-08
+  question: What is the average customer satisfaction score by branch?
+  answerable: false
+  ambiguity_tag: null
+  sql: null
+  expected_result: null
+  business_definition: No survey/satisfaction data exists in the schema.
