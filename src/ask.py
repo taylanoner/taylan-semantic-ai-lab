@@ -13,11 +13,36 @@ import argparse
 import json
 import os
 import sys
+import tempfile
 
+import certifi
+import httpx
 from anthropic import Anthropic, APIError
 from dotenv import load_dotenv
 
 MODEL = "claude-sonnet-5"
+
+# Some local antivirus setups (e.g. Avast) intercept HTTPS with their own root
+# cert, which certifi's bundle doesn't trust. If that cert is present, merge it
+# into a combined bundle instead of touching system/OpenSSL trust config.
+_AVAST_CERT = r"C:\ProgramData\Avast Software\Avast\wscert.pem"
+
+
+def _cert_bundle() -> str:
+    if not os.path.exists(_AVAST_CERT):
+        return certifi.where()
+
+    combined_path = os.path.join(tempfile.gettempdir(), "taylan_semantic_ai_lab_cacert.pem")
+    needs_rebuild = (
+        not os.path.exists(combined_path)
+        or os.path.getmtime(_AVAST_CERT) > os.path.getmtime(combined_path)
+    )
+    if needs_rebuild:
+        with open(combined_path, "w") as out:
+            out.write(open(certifi.where()).read())
+            out.write("\n")
+            out.write(open(_AVAST_CERT).read())
+    return combined_path
 
 SYSTEM_PROMPT = """You are a query-plan generator for a banking analytics system. \
 Given a natural-language question, output ONLY a JSON object with this exact shape:
@@ -98,7 +123,7 @@ def main() -> int:
         print("Error: ANTHROPIC_API_KEY is not set. Add it to .env.", file=sys.stderr)
         return 1
 
-    client = Anthropic(api_key=api_key)
+    client = Anthropic(api_key=api_key, http_client=httpx.Client(verify=_cert_bundle()))
 
     try:
         plan = get_query_plan(client, args.question)
