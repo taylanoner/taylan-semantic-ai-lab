@@ -1,0 +1,30 @@
+- id: oos-dev-01
+  question: Which customers are likely to churn next quarter?
+  answerable: false
+  ambiguity_tag: null
+  sql: null
+  expected_result: null
+  business_definition: Requires a predictive/propensity model; no such model exists
+    in the warehouse.
+- id: oos-dev-02
+  question: Show me revenue by sales representative.
+  answerable: false
+  ambiguity_tag: null
+  sql: null
+  expected_result: null
+  business_definition: No sales-representative dimension exists in the schema.
+- id: oos-dev-03
+  question: What is the current prime interest rate?
+  answerable: false
+  ambiguity_tag: null
+  sql: null
+  expected_result: null
+  business_definition: External macroeconomic data, entirely out of domain for a transactional
+    warehouse.
+- id: oos-dev-04
+  question: How many mobile app logins did we have last month?
+  answerable: false
+  ambiguity_tag: null
+  sql: null
+  expected_result: null
+  business_definition: No digital-channel/engagement data exists in the schema.

@@ -1,0 +1,256 @@
+- id: dev-01
+  question: What was our total net fee revenue in Q1 2026?
+  answerable: true
+  ambiguity_tag: gross_vs_net_revenue
+  sql: "SELECT ROUND(-SUM(amount), 2) FROM fact_transaction\n            WHERE transaction_type\
+    \ = 'fee' AND fee_waived = FALSE AND is_reversal = FALSE\n              AND date_part('year',\
+    \ transaction_date) = 2026 AND date_part('quarter', transaction_date) = 1"
+  expected_result: 3756.58
+  business_definition: Net fee revenue excludes waived fees.
+- id: dev-02
+  question: What was our total gross fee revenue (before waivers) in 2025?
+  answerable: true
+  ambiguity_tag: gross_vs_net_revenue
+  sql: "SELECT ROUND(-SUM(amount), 2) FROM fact_transaction\n            WHERE transaction_type\
+    \ = 'fee' AND is_reversal = FALSE\n              AND date_part('year', transaction_date)\
+    \ = 2025"
+  expected_result: 18385.17
+  business_definition: Explicit 'gross' means before waivers are excluded -- tests
+    that the model follows explicit user intent rather than always defaulting to net.
+- id: dev-03
+  question: What was total net fee revenue from Chequing and Savings accounts in 2024?
+  answerable: true
+  ambiguity_tag: gross_vs_net_revenue
+  sql: "SELECT ROUND(-SUM(t.amount), 2) FROM fact_transaction t\n            JOIN\
+    \ dim_account a ON t.account_id = a.account_id\n            JOIN dim_product p\
+    \ ON a.product_id = p.product_id\n            WHERE p.product_name IN ('Chequing',\
+    \ 'Savings') AND t.transaction_type = 'fee'\n              AND t.fee_waived =\
+    \ FALSE AND t.is_reversal = FALSE\n              AND date_part('year', t.transaction_date)\
+    \ = 2024"
+  expected_result: 1624.62
+  business_definition: Net fee revenue excludes waived fees, scoped to deposit products.
+- id: dev-04
+  question: How many transactions posted to the ledger in Q1 2025?
+  answerable: true
+  ambiguity_tag: posting_vs_transaction_date
+  sql: "SELECT COUNT(*) FROM fact_transaction t\n            JOIN dim_account a ON\
+    \ t.account_id = a.account_id\n            WHERE a.is_internal = FALSE\n     \
+    \         AND date_part('year', t.posting_date) = 2025 AND date_part('quarter',\
+    \ t.posting_date) = 1"
+  expected_result: 470.0
+  business_definition: Ledger/period-close reporting uses posting_date.
+- id: dev-05
+  question: How many transactions did customers initiate in Q1 2025?
+  answerable: true
+  ambiguity_tag: posting_vs_transaction_date
+  sql: "SELECT COUNT(*) FROM fact_transaction t\n            JOIN dim_account a ON\
+    \ t.account_id = a.account_id\n            WHERE a.is_internal = FALSE\n     \
+    \         AND date_part('year', t.transaction_date) = 2025 AND date_part('quarter',\
+    \ t.transaction_date) = 1"
+  expected_result: 468.0
+  business_definition: Customer-activity reporting uses transaction_date.
+- id: dev-06
+  question: What was total transaction volume in Q3 2025, based on transaction date?
+  answerable: true
+  ambiguity_tag: posting_vs_transaction_date
+  sql: "SELECT ROUND(SUM(ABS(t.amount)), 2) FROM fact_transaction t\n            JOIN\
+    \ dim_account a ON t.account_id = a.account_id\n            WHERE a.is_internal\
+    \ = FALSE AND t.is_reversal = FALSE\n              AND t.transaction_id NOT IN\
+    \ (\n                  SELECT reversal_of_transaction_id FROM fact_transaction\
+    \ WHERE reversal_of_transaction_id IS NOT NULL\n              )\n            \
+    \  AND date_part('year', t.transaction_date) = 2025 AND date_part('quarter', t.transaction_date)\
+    \ = 3"
+  expected_result: 647182.53
+  business_definition: Customer-activity volume reporting uses transaction_date, net
+    of reversals and internal accounts.
+- id: dev-07
+  question: How many active customers do we have in the Eastern-ON region?
+  answerable: true
+  ambiguity_tag: open_vs_active_account
+  sql: SELECT COUNT(*) FROM dim_customer WHERE is_active = TRUE AND region = 'Eastern-ON'
+  expected_result: 45.0
+  business_definition: '''Active'' means behavioral recency, scoped to a region.'
+- id: dev-08
+  question: How many customers have at least one open account in the GTA-Central region?
+  answerable: true
+  ambiguity_tag: open_vs_active_account
+  sql: "SELECT COUNT(DISTINCT c.customer_id) FROM dim_customer c\n            JOIN\
+    \ dim_account a ON a.customer_id = c.customer_id\n            WHERE a.status =\
+    \ 'open' AND c.region = 'GTA-Central'"
+  expected_result: 55.0
+  business_definition: Structural (open-account) reading, scoped to a region.
+- id: dev-09
+  question: How many active customers do we have in the GTA-Central region?
+  answerable: true
+  ambiguity_tag: open_vs_active_account
+  sql: SELECT COUNT(*) FROM dim_customer WHERE is_active = TRUE AND region = 'GTA-Central'
+  expected_result: 45.0
+  business_definition: Behavioral reading of the same region as dev-08, for direct
+    contrast.
+- id: dev-10
+  question: What was the average daily deposit balance in Q1 2026?
+  answerable: true
+  ambiguity_tag: month_end_vs_avg_daily_balance
+  sql: SELECT ROUND(AVG(balance_amount), 2) FROM fact_daily_balance WHERE balance_date
+    BETWEEN '2026-01-01' AND '2026-03-31'
+  expected_result: 7269.79
+  business_definition: Average daily balance is the mean across every day in the period.
+- id: dev-11
+  question: What was total deposit balance across all accounts as of March 31, 2026?
+  answerable: true
+  ambiguity_tag: month_end_vs_avg_daily_balance
+  sql: SELECT ROUND(SUM(balance_amount), 2) FROM fact_daily_balance WHERE balance_date
+    = '2026-03-31'
+  expected_result: 1055399.87
+  business_definition: Month-end balance is a snapshot on the last calendar day.
+- id: dev-12
+  question: What was the average daily balance in April 2026 for deposit accounts?
+  answerable: true
+  ambiguity_tag: month_end_vs_avg_daily_balance
+  sql: SELECT ROUND(AVG(balance_amount), 2) FROM fact_daily_balance WHERE balance_date
+    BETWEEN '2026-04-01' AND '2026-04-30'
+  expected_result: 7399.54
+  business_definition: Average daily balance is the mean across every day in the period.
+- id: dev-13
+  question: What is our delinquency rate (30+ days past due) for the active loan portfolio
+    as of March 2026?
+  answerable: true
+  ambiguity_tag: written_off_loans
+  sql: "WITH latest AS (\n                SELECT loan_account_id, days_past_due,\n\
+    \                       ROW_NUMBER() OVER (PARTITION BY loan_account_id ORDER\
+    \ BY payment_date DESC) AS rn\n                FROM fact_loan_payment WHERE payment_date\
+    \ <= '2026-03-31'\n            )\n            SELECT ROUND(100.0 * SUM(CASE WHEN\
+    \ l.days_past_due >= 30 THEN 1 ELSE 0 END) / COUNT(*), 2)\n            FROM latest\
+    \ l JOIN dim_account a ON l.loan_account_id = a.account_id\n            WHERE\
+    \ l.rn = 1 AND a.write_off_flag = FALSE"
+  expected_result: 3.85
+  business_definition: Delinquency rate excludes written-off loans from the active
+    book.
+- id: dev-14
+  question: How many loans in our active portfolio are 60+ days past due, as of March
+    2026?
+  answerable: true
+  ambiguity_tag: written_off_loans
+  sql: "WITH latest AS (\n                SELECT loan_account_id, days_past_due,\n\
+    \                       ROW_NUMBER() OVER (PARTITION BY loan_account_id ORDER\
+    \ BY payment_date DESC) AS rn\n                FROM fact_loan_payment WHERE payment_date\
+    \ <= '2026-03-31'\n            )\n            SELECT COUNT(*) FROM latest l JOIN\
+    \ dim_account a ON l.loan_account_id = a.account_id\n            WHERE l.rn =\
+    \ 1 AND a.write_off_flag = FALSE AND l.days_past_due >= 60"
+  expected_result: 1.0
+  business_definition: Active-portfolio delinquency count excludes written-off loans.
+- id: dev-15
+  question: How many loans have been written off, as of June 2026?
+  answerable: true
+  ambiguity_tag: written_off_loans
+  sql: "SELECT COUNT(*) FROM dim_account a\n            JOIN dim_product p ON a.product_id\
+    \ = p.product_id\n            WHERE p.product_type = 'loan' AND a.write_off_flag\
+    \ = TRUE"
+  expected_result: 10.0
+  business_definition: Charge-off count is a distinct metric from delinquency rate
+    -- written-off loans get their own metric rather than distorting the active-book
+    rate.
+- id: dev-16
+  question: What was total transaction volume (dollar amount) in 2024, net of reversals?
+  answerable: true
+  ambiguity_tag: reversed_transactions
+  sql: "SELECT ROUND(SUM(ABS(t.amount)), 2) FROM fact_transaction t\n            WHERE\
+    \ date_part('year', t.transaction_date) = 2024 AND t.is_reversal = FALSE\n   \
+    \           AND t.transaction_id NOT IN (\n                  SELECT reversal_of_transaction_id\
+    \ FROM fact_transaction WHERE reversal_of_transaction_id IS NOT NULL\n       \
+    \       )"
+  expected_result: 723988.69
+  business_definition: Volume nets reversal pairs out to zero net activity.
+- id: dev-17
+  question: How many transactions from 2024 were later reversed?
+  answerable: true
+  ambiguity_tag: reversed_transactions
+  sql: "SELECT COUNT(DISTINCT r.reversal_of_transaction_id) FROM fact_transaction\
+    \ r\n            JOIN fact_transaction o ON r.reversal_of_transaction_id = o.transaction_id\n\
+    \            WHERE date_part('year', o.transaction_date) = 2024"
+  expected_result: 23.0
+  business_definition: Counts distinct original transactions later reversed.
+- id: dev-18
+  question: What was total transaction volume in 2025 if reversals are not netted
+    out?
+  answerable: true
+  ambiguity_tag: reversed_transactions
+  sql: "SELECT ROUND(SUM(ABS(amount)), 2) FROM fact_transaction\n            WHERE\
+    \ date_part('year', transaction_date) = 2025"
+  expected_result: 3039189.26
+  business_definition: Explicit request for the naive, un-netted figure -- a well-defined
+    but non-standard reading, used to test that the model follows explicit intent
+    rather than always applying the governed default.
+- id: dev-19
+  question: What was total customer transaction volume in 2024?
+  answerable: true
+  ambiguity_tag: internal_accounts
+  sql: "SELECT ROUND(SUM(ABS(t.amount)), 2) FROM fact_transaction t\n            JOIN\
+    \ dim_account a ON t.account_id = a.account_id\n            WHERE a.is_internal\
+    \ = FALSE AND t.is_reversal = FALSE\n              AND t.transaction_id NOT IN\
+    \ (\n                  SELECT reversal_of_transaction_id FROM fact_transaction\
+    \ WHERE reversal_of_transaction_id IS NOT NULL\n              )\n            \
+    \  AND date_part('year', t.transaction_date) = 2024"
+  expected_result: 580332.14
+  business_definition: Customer transaction volume excludes internal/GL accounts.
+- id: dev-20
+  question: How many transactions did customers make in 2024?
+  answerable: true
+  ambiguity_tag: internal_accounts
+  sql: "SELECT COUNT(*) FROM fact_transaction t\n            JOIN dim_account a ON\
+    \ t.account_id = a.account_id\n            WHERE a.is_internal = FALSE AND date_part('year',\
+    \ t.transaction_date) = 2024"
+  expected_result: 597.0
+  business_definition: Customer transaction count excludes internal/GL account activity.
+- id: dev-21
+  question: How many transactions were recorded across all accounts, including internal
+    ones, in 2025?
+  answerable: true
+  ambiguity_tag: internal_accounts
+  sql: "SELECT COUNT(*) FROM fact_transaction\n            WHERE date_part('year',\
+    \ transaction_date) = 2025"
+  expected_result: 2884.0
+  business_definition: Explicit request to include internal accounts -- tests that
+    the model follows stated intent rather than always excluding them by default.
+- id: dev-22
+  question: What was total transaction volume attributed to the Mississauga West branch
+    in 2025, based on customers' home branch?
+  answerable: true
+  ambiguity_tag: customer_vs_branch_location
+  sql: "SELECT ROUND(SUM(ABS(t.amount)), 2) FROM fact_transaction t\n            JOIN\
+    \ dim_account a ON t.account_id = a.account_id\n            JOIN dim_branch b\
+    \ ON a.home_branch_id = b.branch_id\n            WHERE b.branch_name = 'Mississauga\
+    \ West' AND a.is_internal = FALSE AND t.is_reversal = FALSE\n              AND\
+    \ t.transaction_id NOT IN (\n                  SELECT reversal_of_transaction_id\
+    \ FROM fact_transaction WHERE reversal_of_transaction_id IS NOT NULL\n       \
+    \       )\n              AND date_part('year', t.transaction_date) = 2025"
+  expected_result: 223804.08
+  business_definition: Branch performance reporting attributes volume to the customer's
+    home branch.
+- id: dev-23
+  question: How many transactions physically occurred at the Kanata branch in 2025,
+    regardless of the customer's home branch?
+  answerable: true
+  ambiguity_tag: customer_vs_branch_location
+  sql: "SELECT COUNT(*) FROM fact_transaction t\n            JOIN dim_account a ON\
+    \ t.account_id = a.account_id\n            JOIN dim_branch b ON t.branch_id =\
+    \ b.branch_id\n            WHERE b.branch_name = 'Kanata' AND a.is_internal =\
+    \ FALSE\n              AND date_part('year', t.transaction_date) = 2025"
+  expected_result: 631.0
+  business_definition: Foot-traffic reporting attributes activity to the transaction's
+    physical branch.
+- id: dev-24
+  question: What was total transaction volume attributed to the Brampton North branch
+    in 2025, based on customers' home branch?
+  answerable: true
+  ambiguity_tag: customer_vs_branch_location
+  sql: "SELECT ROUND(SUM(ABS(t.amount)), 2) FROM fact_transaction t\n            JOIN\
+    \ dim_account a ON t.account_id = a.account_id\n            JOIN dim_branch b\
+    \ ON a.home_branch_id = b.branch_id\n            WHERE b.branch_name = 'Brampton\
+    \ North' AND a.is_internal = FALSE AND t.is_reversal = FALSE\n              AND\
+    \ t.transaction_id NOT IN (\n                  SELECT reversal_of_transaction_id\
+    \ FROM fact_transaction WHERE reversal_of_transaction_id IS NOT NULL\n       \
+    \       )\n              AND date_part('year', t.transaction_date) = 2025"
+  expected_result: 495368.37
+  business_definition: Branch performance reporting attributes volume to the customer's
+    home branch.
