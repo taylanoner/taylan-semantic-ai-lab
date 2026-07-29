@@ -387,9 +387,10 @@ def update_customer_activity(con: duckdb.DuckDBPyConnection) -> None:
     """, [cutoff])
 
 
-def build(output_path: str) -> None:
+def build_into(con: duckdb.DuckDBPyConnection) -> None:
+    """Builds the warehouse schema and seed data into an already-open
+    connection (file-backed or in-memory)."""
     rng = random.Random(SEED)
-    con = duckdb.connect(output_path)
 
     build_schema(con)
     seed_dim_date(con)
@@ -401,6 +402,11 @@ def build(output_path: str) -> None:
     seed_fact_daily_balance(con, rng)
     seed_fact_loan_payment(con, rng)
     update_customer_activity(con)
+
+
+def build(output_path: str) -> None:
+    con = duckdb.connect(output_path)
+    build_into(con)
 
     con.close()
 
