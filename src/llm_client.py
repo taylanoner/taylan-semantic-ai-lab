@@ -33,6 +33,13 @@ def _cert_bundle() -> str:
     return combined_path
 
 
+def extract_text(response) -> str:
+    """Concatenate all text blocks in a response. The model can return a
+    ThinkingBlock ahead of the TextBlock, so content[0] isn't reliably text."""
+    parts = [block.text for block in response.content if block.type == "text"]
+    return "".join(parts)
+
+
 def get_client() -> Anthropic:
     load_dotenv()
     api_key = os.environ.get("ANTHROPIC_API_KEY")

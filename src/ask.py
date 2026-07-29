@@ -15,7 +15,7 @@ import sys
 
 from anthropic import Anthropic, APIError
 
-from llm_client import MODEL, get_client
+from llm_client import MODEL, extract_text, get_client
 
 SYSTEM_PROMPT = """You are a query-plan generator for a banking analytics system. \
 Given a natural-language question, output ONLY a JSON object with this exact shape:
@@ -74,7 +74,7 @@ def get_query_plan(client: Anthropic, question: str) -> dict:
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": question}],
     )
-    raw_text = response.content[0].text.strip()
+    raw_text = extract_text(response).strip()
     if raw_text.startswith("```"):
         raw_text = raw_text.strip("`")
         if raw_text.startswith("json"):

@@ -24,6 +24,7 @@ synonym + verified answer (week 13) -> rows in the benchmark (week 16).
 - **Reading B (behavioral):** Customer transacted within a defined recency window, regardless of account status.
 - **Business meaning:** Segment/engagement reporting means behavioral activity, not just non-closed status.
 - **Detecting a wrong answer:** If the "active" count matches the simple open-account count, the model used status instead of behavior.
+- **Known scope limitation:** `dim_customer.is_active` is stored as a precomputed column rather than derived live from `fact_transaction` recency. The week-6 raw-schema baseline resolved this ambiguity correctly on all 9 dev-set attempts (100%), versus a much lower rate on every other ambiguity -- because a column literally named `is_active` is easy for any model to find and use once it sees the schema. This narrows the honest claim for this specific ambiguity: it tests whether the model selects the correct *existing governed column* over a plausible distractor (`status`), not whether it can *derive* customer activity from raw transaction history. The other 7 ambiguities require genuine derivation/judgment and are not affected.
 
 ## 4. Month-end vs. average daily balance
 
