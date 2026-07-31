@@ -1,6 +1,7 @@
 """Shared Claude API client setup, used by ask.py and run_baseline.py."""
 
 import os
+import ssl
 import tempfile
 
 import certifi
@@ -45,4 +46,5 @@ def get_client() -> Anthropic:
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key or api_key == "your-key-here":
         raise RuntimeError("ANTHROPIC_API_KEY is not set. Add it to .env.")
-    return Anthropic(api_key=api_key, http_client=httpx.Client(verify=_cert_bundle()))
+    ssl_context = ssl.create_default_context(cafile=_cert_bundle())
+    return Anthropic(api_key=api_key, http_client=httpx.Client(verify=ssl_context))
