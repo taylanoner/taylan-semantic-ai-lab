@@ -12,7 +12,7 @@ daff==1.4.2
 dbt-adapters==1.24.5
 dbt-common==1.38.0
 dbt-core==1.12.0
-dbt-core-experimental-parser @ file:///C:/LLM_works/taylan-semantic-ai-lab/dbt_core_experimental_parser-2.0.0a5-py3-none-win_amd64.whl#sha256=c614fca08988ec0645576fba98287b312a6ddc961eb6340555b4fcfdbeda3fce
+dbt-core-experimental-parser==2.0.0a5
 dbt-duckdb==1.10.1
 dbt-extractor==0.6.0
 dbt-protos==1.0.541
