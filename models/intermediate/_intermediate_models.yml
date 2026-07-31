@@ -1,0 +1,16 @@
+version: 2
+
+models:
+  - name: int_account_balances_monthly
+    description: >
+      One row per account per month, with avg_daily_balance and month_end_balance
+      exposed as two distinctly named measures -- see docs/ambiguity-register.md #4.
+    columns:
+      - name: account_id
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_accounts')
+                field: account_id
+      - name: month_start
+        tests: [not_null]

@@ -19,3 +19,12 @@ jobs:
 
       - name: Run tests
         run: pytest -v
+
+      - name: Build warehouse
+        run: python src/build_warehouse.py
+
+      - name: dbt build
+        run: dbt build --profiles-dir .
+
+      - name: dbt docs generate
+        run: dbt docs generate --profiles-dir .

@@ -1,0 +1,98 @@
+version: 2
+
+models:
+  - name: stg_branches
+    description: One row per physical branch.
+    columns:
+      - name: branch_id
+        tests: [not_null, unique]
+
+  - name: stg_products
+    description: One row per product offered (deposit, loan, credit, or internal/GL).
+    columns:
+      - name: product_id
+        tests: [not_null, unique]
+      - name: product_type
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["deposit", "loan", "credit", "internal"]
+
+  - name: stg_customers
+    description: >
+      One row per customer. is_active reflects behavioral recency (a transaction
+      in the trailing 90 days), not account status -- see docs/ambiguity-register.md #3.
+    columns:
+      - name: customer_id
+        tests: [not_null, unique]
+
+  - name: stg_accounts
+    description: >
+      One row per account. write_off_flag marks loans moved to charge-off and
+      excluded from active-portfolio delinquency metrics -- see ambiguity #5.
+    columns:
+      - name: account_id
+        tests: [not_null, unique]
+      - name: customer_id
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+      - name: product_id
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_products')
+                field: product_id
+      - name: status
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["open", "closed"]
+
+  - name: stg_dates
+    description: Calendar dimension.
+    columns:
+      - name: date_key
+        tests: [not_null, unique]
+
+  - name: stg_transactions
+    description: >
+      Governed transaction fact: internal/GL accounts excluded (ambiguity #7) and
+      reversed transaction pairs netted out (ambiguity #6). This is the table
+      downstream volume/revenue metrics should query, not the raw source.
+    columns:
+      - name: transaction_id
+        tests: [not_null, unique]
+      - name: account_id
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_accounts')
+                field: account_id
+      - name: transaction_type
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["fee", "deposit", "withdrawal", "purchase"]
+
+  - name: stg_daily_balances
+    description: Daily balance snapshots for deposit accounts.
+    columns:
+      - name: account_id
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_accounts')
+                field: account_id
+
+  - name: stg_loan_payments
+    description: Monthly loan payment records including days past due.
+    columns:
+      - name: loan_account_id
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_accounts')
+                field: account_id

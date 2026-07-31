@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: Customer dimension enriched with home branch info.
+    columns:
+      - name: customer_id
+        tests: [not_null, unique]
+
+  - name: fct_transactions
+    description: >
+      Governed transaction fact -- internal accounts excluded, reversals netted
+      (inherited from stg_transactions), enriched with branch name/region.
+    columns:
+      - name: transaction_id
+        tests: [not_null, unique]
+
+  - name: fct_account_balances_monthly
+    description: One row per account per month with both balance measures (ambiguity #4).
+    columns:
+      - name: account_id
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_accounts')
+                field: account_id

@@ -1,0 +1,68 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: main
+    description: Raw tables produced directly by src/build_warehouse.py (not owned by dbt).
+    tables:
+      - name: dim_date
+        columns:
+          - name: date_key
+            tests: [not_null, unique]
+      - name: dim_branch
+        columns:
+          - name: branch_id
+            tests: [not_null, unique]
+      - name: dim_product
+        columns:
+          - name: product_id
+            tests: [not_null, unique]
+          - name: product_type
+            tests:
+              - accepted_values:
+                  arguments:
+                    values: ["deposit", "loan", "credit", "internal"]
+      - name: dim_customer
+        columns:
+          - name: customer_id
+            tests: [not_null, unique]
+      - name: dim_account
+        columns:
+          - name: account_id
+            tests: [not_null, unique]
+          - name: status
+            tests:
+              - accepted_values:
+                  arguments:
+                    values: ["open", "closed"]
+      - name: fact_transaction
+        columns:
+          - name: transaction_id
+            tests: [not_null, unique]
+          - name: account_id
+            tests:
+              - relationships:
+                  arguments:
+                    to: source('raw', 'dim_account')
+                    field: account_id
+          - name: transaction_type
+            tests:
+              - accepted_values:
+                  arguments:
+                    values: ["fee", "deposit", "withdrawal", "purchase"]
+      - name: fact_daily_balance
+        columns:
+          - name: account_id
+            tests:
+              - relationships:
+                  arguments:
+                    to: source('raw', 'dim_account')
+                    field: account_id
+      - name: fact_loan_payment
+        columns:
+          - name: loan_account_id
+            tests:
+              - relationships:
+                  arguments:
+                    to: source('raw', 'dim_account')
+                    field: account_id
