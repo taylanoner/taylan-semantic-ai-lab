@@ -119,6 +119,15 @@ def build_schema(con: duckdb.DuckDBPyConnection) -> None:
             days_past_due INTEGER
         )
     """)
+    con.execute("""
+        CREATE TABLE fact_interest_monthly (
+            account_id INTEGER,
+            month_start DATE,
+            interest_income DECIMAL(12,2),   -- loans only; 0 for deposit rows
+            interest_expense DECIMAL(12,2),  -- deposits only; 0 for loan rows
+            outstanding_loan_balance DECIMAL(12,2)  -- loans only; 0 for deposit rows
+        )
+    """)
 
 
 def seed_dim_date(con: duckdb.DuckDBPyConnection) -> None:
@@ -373,6 +382,65 @@ def seed_fact_loan_payment(con: duckdb.DuckDBPyConnection, rng: random.Random):
     con.executemany("INSERT INTO fact_loan_payment VALUES (?, ?, ?, ?)", rows)
 
 
+# Simplified interest model for net_interest_income / net_interest_margin.
+# Not a real amortization engine: deposit interest is a fixed monthly rate on
+# the account's actual avg daily balance (only exists for the Jan-Jun 2026
+# window fact_daily_balance covers); loan interest is a fixed monthly rate on
+# a synthetic origination amount straight-line amortized to zero over a fixed
+# term. Documented as a simplification, not a claim of realism.
+DEPOSIT_MONTHLY_RATE = {"Chequing": 0.0002, "Savings": 0.0015}
+LOAN_TERM_MONTHS = {"Personal Loan": 60, "Mortgage": 300}
+LOAN_MONTHLY_RATE = {"Personal Loan": 0.007, "Mortgage": 0.0035}
+LOAN_ORIGINATION_RANGE = {"Personal Loan": (5000, 40000), "Mortgage": (150000, 500000)}
+
+
+def seed_fact_interest_monthly(con: duckdb.DuckDBPyConnection, rng: random.Random):
+    rows = []
+
+    deposit_rows = con.execute("""
+        SELECT b.account_id, date_trunc('month', b.balance_date) AS month_start,
+               AVG(b.balance_amount) AS avg_balance, p.product_name
+        FROM fact_daily_balance b
+        JOIN dim_account a ON b.account_id = a.account_id
+        JOIN dim_product p ON a.product_id = p.product_id
+        GROUP BY b.account_id, date_trunc('month', b.balance_date), p.product_name
+    """).fetchall()
+    for account_id, month_start, avg_balance, product_name in deposit_rows:
+        rate = DEPOSIT_MONTHLY_RATE.get(product_name, 0.0)
+        interest_expense = round(float(avg_balance) * rate, 2)
+        rows.append((account_id, month_start, 0.0, interest_expense, 0.0))
+
+    loans = con.execute("""
+        SELECT a.account_id, a.open_date, a.write_off_flag, a.write_off_date, p.product_name
+        FROM dim_account a
+        JOIN dim_product p ON a.product_id = p.product_id
+        WHERE p.product_type = 'loan'
+    """).fetchall()
+    for account_id, open_date, write_off_flag, write_off_date, product_name in loans:
+        lo, hi = LOAN_ORIGINATION_RANGE[product_name]
+        origination = rng.uniform(lo, hi)
+        term = LOAN_TERM_MONTHS[product_name]
+        rate = LOAN_MONTHLY_RATE[product_name]
+        end = write_off_date if write_off_flag else AS_OF_DATE
+
+        month = date(open_date.year, open_date.month, 1)
+        month_index = 0
+        while month <= end:
+            fraction_remaining = max(0.0, 1 - month_index / term)
+            outstanding = round(origination * fraction_remaining, 2)
+            interest_income = round(outstanding * rate, 2)
+            rows.append((account_id, month, interest_income, 0.0, outstanding))
+            month_index += 1
+            if month.month == 12:
+                month = date(month.year + 1, 1, 1)
+            else:
+                month = date(month.year, month.month + 1, 1)
+
+    con.executemany(
+        "INSERT INTO fact_interest_monthly VALUES (?, ?, ?, ?, ?)", rows
+    )
+
+
 def update_customer_activity(con: duckdb.DuckDBPyConnection) -> None:
     cutoff = AS_OF_DATE - timedelta(days=90)
     con.execute("""
@@ -401,6 +469,7 @@ def build_into(con: duckdb.DuckDBPyConnection) -> None:
     seed_fact_transaction(con, rng)
     seed_fact_daily_balance(con, rng)
     seed_fact_loan_payment(con, rng)
+    seed_fact_interest_monthly(con, rng)
     update_customer_activity(con)
 
 

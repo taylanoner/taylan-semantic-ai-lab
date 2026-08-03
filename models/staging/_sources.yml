@@ -66,3 +66,11 @@ sources:
                   arguments:
                     to: source('raw', 'dim_account')
                     field: account_id
+      - name: fact_interest_monthly
+        columns:
+          - name: account_id
+            tests:
+              - relationships:
+                  arguments:
+                    to: source('raw', 'dim_account')
+                    field: account_id

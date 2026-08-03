@@ -1,0 +1,73 @@
+semantic_models:
+  - name: sem_interest
+    model: ref('fct_interest_monthly')
+    description: >
+      Simplified monthly interest accrual. See stg_interest for methodology
+      and limitations -- not tied to any of the 8 seeded ambiguities.
+    defaults:
+      agg_time_dimension: accrual_month_start
+    entities:
+      - name: account
+        type: primary
+        expr: account_id
+      - name: customer
+        type: foreign
+        expr: customer_id
+    dimensions:
+      - name: accrual_month_start
+        type: time
+        expr: month_start
+        type_params:
+          time_granularity: month
+    measures:
+      - name: interest_income_measure
+        agg: sum
+        expr: interest_income
+      - name: interest_expense_measure
+        agg: sum
+        expr: interest_expense
+      - name: outstanding_loan_balance_measure
+        agg: sum
+        expr: outstanding_loan_balance
+
+metrics:
+  - name: gross_interest_income
+    type: simple
+    label: Gross Interest Income (helper)
+    type_params:
+      measure: interest_income_measure
+
+  - name: gross_interest_expense
+    type: simple
+    label: Gross Interest Expense (helper)
+    type_params:
+      measure: interest_expense_measure
+
+  - name: net_interest_income
+    description: >
+      Interest income (loans) minus interest expense (deposits). Simplified
+      accrual model, not a real amortization engine -- see stg_interest.
+    type: derived
+    label: Net Interest Income
+    type_params:
+      expr: "gross_interest_income - gross_interest_expense"
+      metrics:
+        - name: gross_interest_income
+        - name: gross_interest_expense
+
+  - name: total_outstanding_loan_balance
+    type: simple
+    label: Total Outstanding Loan Balance (helper)
+    type_params:
+      measure: outstanding_loan_balance_measure
+
+  - name: net_interest_margin
+    description: >
+      Net interest income divided by total outstanding loan balance for the
+      period. Simplified -- uses loan balance only as the earning-asset base,
+      not a full asset mix.
+    type: ratio
+    label: Net Interest Margin
+    type_params:
+      numerator: net_interest_income
+      denominator: total_outstanding_loan_balance

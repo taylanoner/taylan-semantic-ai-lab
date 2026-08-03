@@ -1,0 +1,64 @@
+semantic_models:
+  - name: sem_transactions
+    model: ref('fct_transactions')
+    description: >
+      Governed transaction fact. Reversals and internal accounts are already
+      excluded upstream (stg_transactions) -- ambiguities #6 and #7.
+    defaults:
+      agg_time_dimension: transaction_date
+    entities:
+      - name: transaction
+        type: primary
+        expr: transaction_id
+      - name: account
+        type: foreign
+        expr: account_id
+    dimensions:
+      - name: transaction_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: posting_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: transaction_type
+        type: categorical
+      - name: fee_waived
+        type: categorical
+      - name: transaction_branch_name
+        type: categorical
+      - name: home_branch_name
+        type: categorical
+    measures:
+      - name: transaction_amount_abs
+        description: Absolute dollar amount, used for volume. Reversals/internal already excluded upstream.
+        agg: sum
+        expr: abs(amount)
+      - name: fee_amount
+        description: Fee dollar amount (positive), zero on non-fee rows.
+        agg: sum
+        expr: "case when transaction_type = 'fee' then -amount else 0 end"
+
+metrics:
+  - name: transaction_volume
+    description: >
+      Total transaction dollar volume. Reversed transactions netted out and
+      internal/GL accounts excluded upstream in stg_transactions (ambiguities
+      #6, #7). Defaults to transaction_date (when the customer acted); use
+      posting_date explicitly for period-close reporting (ambiguity #2).
+    type: simple
+    label: Transaction Volume
+    type_params:
+      measure: transaction_amount_abs
+
+  - name: fee_revenue_net
+    description: >
+      Fee revenue net of waived fees (ambiguity #1). "Gross" would be the
+      same measure without this filter.
+    type: simple
+    label: Fee Revenue (Net)
+    type_params:
+      measure: fee_amount
+    filter: |
+      {{ Dimension('transaction__fee_waived') }} = false

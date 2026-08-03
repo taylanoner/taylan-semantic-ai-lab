@@ -4,7 +4,7 @@ config-version: 2
 
 profile: taylan_semantic_ai_lab
 
-model-paths: ["models"]
+model-paths: ["models", "semantic"]
 test-paths: ["tests_dbt"]
 macro-paths: ["macros"]
 target-path: "target"

@@ -14,3 +14,15 @@ models:
                 field: account_id
       - name: month_start
         tests: [not_null]
+
+  - name: int_loan_delinquency_monthly
+    description: One row per loan per month with the latest days_past_due on record for that month.
+    columns:
+      - name: loan_account_id
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_accounts')
+                field: account_id
+      - name: month_start
+        tests: [not_null]

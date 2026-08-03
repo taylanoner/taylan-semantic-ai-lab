@@ -1,0 +1,100 @@
+semantic_models:
+  - name: sem_loans
+    model: ref('fct_loans_monthly')
+    description: >
+      One row per loan per month. write_off_flag is an explicit dimension so
+      delinquency metrics can exclude the charged-off book -- ambiguity #5.
+    defaults:
+      agg_time_dimension: month_start
+    entities:
+      - name: loan
+        type: primary
+        expr: loan_account_id
+      - name: customer
+        type: foreign
+        expr: customer_id
+    dimensions:
+      - name: month_start
+        type: time
+        type_params:
+          time_granularity: month
+      - name: write_off_flag
+        type: categorical
+    measures:
+      - name: loan_count
+        agg: count_distinct
+        expr: loan_account_id
+      - name: delinquent_30d_indicator
+        agg: sum
+        expr: "case when days_past_due >= 30 then 1 else 0 end"
+      - name: delinquent_90d_indicator
+        agg: sum
+        expr: "case when days_past_due >= 90 then 1 else 0 end"
+      - name: write_off_indicator
+        agg: sum
+        expr: "case when write_off_flag then 1 else 0 end"
+
+metrics:
+  - name: active_loan_count
+    type: simple
+    label: Active Loan Count (helper)
+    type_params:
+      measure: loan_count
+    filter: |
+      {{ Dimension('loan__write_off_flag') }} = false
+
+  - name: total_loan_count
+    type: simple
+    label: Total Loan Count, includes written-off (helper)
+    type_params:
+      measure: loan_count
+
+  - name: delinquent_30d_count
+    type: simple
+    label: 30+ DPD Count, Active Book (helper)
+    type_params:
+      measure: delinquent_30d_indicator
+    filter: |
+      {{ Dimension('loan__write_off_flag') }} = false
+
+  - name: delinquency_rate_30d
+    description: >
+      Share of the ACTIVE loan book 30+ days past due. Written-off loans
+      excluded from both numerator and denominator (ambiguity #5).
+    type: ratio
+    label: Delinquency Rate (30d)
+    type_params:
+      numerator: delinquent_30d_count
+      denominator: active_loan_count
+
+  - name: delinquent_90d_count
+    type: simple
+    label: 90+ DPD Count, Active Book (helper)
+    type_params:
+      measure: delinquent_90d_indicator
+    filter: |
+      {{ Dimension('loan__write_off_flag') }} = false
+
+  - name: delinquency_rate_90d
+    description: Share of the active loan book 90+ days past due (ambiguity #5).
+    type: ratio
+    label: Delinquency Rate (90d)
+    type_params:
+      numerator: delinquent_90d_count
+      denominator: active_loan_count
+
+  - name: charge_off_count
+    type: simple
+    label: Charge-Off Count (helper)
+    type_params:
+      measure: write_off_indicator
+
+  - name: charge_off_rate
+    description: >
+      Share of the total loan book that has been written off -- a distinct
+      metric from delinquency rate, not folded into it (ambiguity #5).
+    type: ratio
+    label: Charge-Off Rate
+    type_params:
+      numerator: charge_off_count
+      denominator: total_loan_count

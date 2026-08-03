@@ -1,0 +1,61 @@
+semantic_models:
+  - name: sem_customers
+    model: ref('dim_customers')
+    description: >
+      Customer dimension. is_active reflects behavioral recency (a
+      transaction in the trailing 90 days), not account status -- ambiguity #3.
+    defaults:
+      agg_time_dimension: signup_date
+    entities:
+      - name: customer
+        type: primary
+        expr: customer_id
+    dimensions:
+      - name: signup_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: region
+        type: categorical
+      - name: home_branch_name
+        type: categorical
+      - name: is_active
+        type: categorical
+    measures:
+      - name: customer_count
+        agg: count_distinct
+        expr: customer_id
+
+metrics:
+  - name: customer_count
+    type: simple
+    label: Customer Count (helper)
+    type_params:
+      measure: customer_count
+
+  - name: active_customer_count
+    description: >
+      Customers with a transaction in the trailing 90 days -- the behavioral
+      reading, not simply "holds a non-closed account" (ambiguity #3).
+    type: simple
+    label: Active Customer Count
+    type_params:
+      measure: customer_count
+    filter: |
+      {{ Dimension('customer__is_active') }} = true
+
+  - name: inactive_customer_count
+    type: simple
+    label: Inactive Customer Count (helper)
+    type_params:
+      measure: customer_count
+    filter: |
+      {{ Dimension('customer__is_active') }} = false
+
+  - name: customer_inactivity_rate
+    description: Share of customers with no transaction in the trailing 90 days.
+    type: ratio
+    label: Customer Inactivity Rate
+    type_params:
+      numerator: inactive_customer_count
+      denominator: customer_count

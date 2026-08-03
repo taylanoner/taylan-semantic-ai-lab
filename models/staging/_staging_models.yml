@@ -52,9 +52,12 @@ models:
                 values: ["open", "closed"]
 
   - name: stg_dates
-    description: Calendar dimension.
+    description: Calendar dimension. Also serves as MetricFlow's required time spine.
+    time_spine:
+      standard_granularity_column: date_key
     columns:
       - name: date_key
+        granularity: day
         tests: [not_null, unique]
 
   - name: stg_transactions
@@ -91,6 +94,20 @@ models:
     description: Monthly loan payment records including days past due.
     columns:
       - name: loan_account_id
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_accounts')
+                field: account_id
+
+  - name: stg_interest
+    description: >
+      Simplified monthly interest accrual -- deposit interest_expense from
+      actual avg daily balance (Jan-Jun 2026 only); loan interest_income from
+      a synthetic straight-line amortized origination amount. Not a real
+      amortization engine.
+    columns:
+      - name: account_id
         tests:
           - relationships:
               arguments:

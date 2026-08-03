@@ -10,13 +10,37 @@ models:
   - name: fct_transactions
     description: >
       Governed transaction fact -- internal accounts excluded, reversals netted
-      (inherited from stg_transactions), enriched with branch name/region.
+      (inherited from stg_transactions). Exposes both transaction_branch_name
+      (where it physically happened) and home_branch_name (the customer's
+      registered branch) as distinct columns -- ambiguity #8.
     columns:
       - name: transaction_id
         tests: [not_null, unique]
 
   - name: fct_account_balances_monthly
     description: One row per account per month with both balance measures (ambiguity #4).
+    columns:
+      - name: account_id
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_accounts')
+                field: account_id
+
+  - name: fct_loans_monthly
+    description: One row per loan per month, with write_off_flag as an explicit dimension (ambiguity #5).
+    columns:
+      - name: loan_account_id
+        tests:
+          - relationships:
+              arguments:
+                to: ref('stg_accounts')
+                field: account_id
+
+  - name: fct_interest_monthly
+    description: >
+      Simplified monthly interest accrual per account (see stg_interest for
+      the methodology and its limitations).
     columns:
       - name: account_id
         tests:

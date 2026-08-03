@@ -1,0 +1,42 @@
+semantic_models:
+  - name: sem_account_balances
+    model: ref('fct_account_balances_monthly')
+    description: >
+      One row per account per month; avg_daily_balance and month_end_balance
+      are two distinct measures, not one silently picked over the other --
+      ambiguity #4.
+    defaults:
+      agg_time_dimension: month_start
+    entities:
+      - name: account
+        type: primary
+        expr: account_id
+    dimensions:
+      - name: month_start
+        type: time
+        type_params:
+          time_granularity: month
+    measures:
+      - name: avg_daily_balance_measure
+        agg: average
+        expr: avg_daily_balance
+      - name: month_end_balance_measure
+        agg: average
+        expr: month_end_balance
+
+metrics:
+  - name: average_daily_balance
+    description: >
+      Average daily balance across the period -- distinctly named from
+      month_end_balance, not a silent default (ambiguity #4).
+    type: simple
+    label: Average Daily Balance
+    type_params:
+      measure: avg_daily_balance_measure
+
+  - name: month_end_balance
+    description: Point-in-time snapshot on the last day of the period, distinct from average_daily_balance.
+    type: simple
+    label: Month-End Balance
+    type_params:
+      measure: month_end_balance_measure
