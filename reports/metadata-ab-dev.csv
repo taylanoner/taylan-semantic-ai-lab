@@ -1,0 +1,151 @@
+question_id,model,answerable_expected,category,model_result,expected_result,sql
+dev-01,A_poor_metadata,True,inappropriate_refusal,,3756.58,
+dev-01,B_ai_ready,True,wrong_result,3622.99,3756.58,"SELECT -SUM(t.amount) AS net_fee_revenue
+FROM fct_transactions t
+JOIN dim_date d ON t.transaction_date = d.date_key
+WHERE t.transaction_type = 'fee'
+  AND t.fee_waived = FALSE
+  AND d.year = 2026
+  AND d.quarter = 1"
+dev-02,A_poor_metadata,True,null_result,,18385.17,"SELECT
+    SUM(amount) AS total_gross_fee_revenue
+FROM fct_transactions
+WHERE transaction_type = 'FEE'
+  AND EXTRACT(YEAR FROM transaction_date) = 2025;"
+dev-02,B_ai_ready,True,wrong_result,17671.81,18385.17,"SELECT -SUM(t.amount) AS gross_fee_revenue
+FROM fct_transactions t
+WHERE t.transaction_type = 'fee'
+  AND EXTRACT(YEAR FROM t.transaction_date) = 2025"
+dev-03,A_poor_metadata,True,inappropriate_refusal,,1624.62,
+dev-03,B_ai_ready,True,inappropriate_refusal,,1624.62,
+dev-04,A_poor_metadata,True,wrong_result,458.0,470.0,"SELECT COUNT(*) AS transaction_count
+FROM fct_transactions
+WHERE posting_date >= '2025-01-01' AND posting_date < '2025-04-01';"
+dev-04,B_ai_ready,True,wrong_result,458.0,470.0,"SELECT COUNT(*) 
+FROM fct_transactions 
+WHERE posting_date >= '2025-01-01' AND posting_date < '2025-04-01'"
+dev-05,A_poor_metadata,True,wrong_result,458.0,468.0,"SELECT COUNT(*) AS transaction_count
+FROM fct_transactions ft
+JOIN dim_date d ON ft.transaction_date = d.date_key
+WHERE d.year = 2025 AND d.quarter = 1;"
+dev-05,B_ai_ready,True,wrong_result,458.0,468.0,SELECT COUNT(*) FROM fct_transactions WHERE transaction_date >= '2025-01-01' AND transaction_date < '2025-04-01'
+dev-06,A_poor_metadata,True,wrong_result,-249021.03,647182.53,"SELECT SUM(amount) AS total_transaction_volume
+FROM fct_transactions
+WHERE transaction_date >= '2025-07-01'
+  AND transaction_date < '2025-10-01';"
+dev-06,B_ai_ready,True,correct,647182.53,647182.53,"SELECT SUM(ABS(t.amount)) AS transaction_volume
+FROM fct_transactions t
+JOIN dim_date d ON t.transaction_date = d.date_key
+WHERE d.year = 2025 AND d.quarter = 3"
+dev-07,A_poor_metadata,True,correct,45.0,45.0,"SELECT COUNT(*) AS active_customers
+FROM dim_customers
+WHERE is_active = TRUE
+  AND region = 'Eastern-ON';"
+dev-07,B_ai_ready,True,correct,45.0,45.0,SELECT COUNT(*) FROM dim_customers WHERE is_active = TRUE AND region = 'Eastern-ON'
+dev-08,A_poor_metadata,True,inappropriate_refusal,,55.0,
+dev-08,B_ai_ready,True,inappropriate_refusal,,55.0,
+dev-09,A_poor_metadata,True,correct,45.0,45.0,"SELECT COUNT(*) AS active_customers
+FROM dim_customers
+WHERE is_active = TRUE
+  AND region = 'GTA-Central';"
+dev-09,B_ai_ready,True,correct,45.0,45.0,SELECT COUNT(*) FROM dim_customers WHERE is_active = TRUE AND region = 'GTA-Central'
+dev-10,A_poor_metadata,True,correct,7267.5323247549795,7269.79,"SELECT AVG(avg_daily_balance) AS avg_daily_deposit_balance_q1_2026
+FROM fct_account_balances_monthly
+WHERE month_start >= DATE '2026-01-01'
+  AND month_start < DATE '2026-04-01';"
+dev-10,B_ai_ready,True,correct,7267.5323247549795,7269.79,"SELECT AVG(avg_daily_balance) AS avg_daily_deposit_balance
+FROM fct_account_balances_monthly
+WHERE month_start >= '2026-01-01' AND month_start < '2026-04-01';"
+dev-11,A_poor_metadata,True,correct,1055399.87,1055399.87,"SELECT SUM(month_end_balance) AS total_deposit_balance
+FROM fct_account_balances_monthly
+WHERE month_start = '2026-03-01';"
+dev-11,B_ai_ready,True,inappropriate_refusal,,1055399.87,
+dev-12,A_poor_metadata,True,inappropriate_refusal,,7399.54,
+dev-12,B_ai_ready,True,inappropriate_refusal,,7399.54,
+dev-13,A_poor_metadata,True,wrong_result,0.13793103448275862,3.85,"SELECT
+  CAST(SUM(CASE WHEN days_past_due >= 30 THEN 1 ELSE 0 END) AS DOUBLE) / COUNT(*) AS delinquency_rate_30plus
+FROM fct_loans_monthly
+WHERE month_start = DATE '2026-03-01';"
+dev-13,B_ai_ready,True,wrong_result,0.038461538461538464,3.85,"SELECT
+  COUNT(*) FILTER (WHERE days_past_due >= 30) * 1.0 / COUNT(*) AS delinquency_rate_30d
+FROM fct_loans_monthly
+WHERE month_start = '2026-03-01'
+  AND write_off_flag = FALSE"
+dev-14,A_poor_metadata,True,correct,1.0,1.0,"SELECT COUNT(*) AS loans_60plus_dpd
+FROM fct_loans_monthly
+WHERE month_start = DATE '2026-03-01'
+  AND days_past_due >= 60
+  AND write_off_flag = FALSE;"
+dev-14,B_ai_ready,True,correct,1.0,1.0,"SELECT COUNT(*) AS loans_60plus_dpd
+FROM fct_loans_monthly
+WHERE month_start = '2026-03-01'
+  AND write_off_flag = FALSE
+  AND days_past_due >= 60;"
+dev-15,A_poor_metadata,True,correct,10.0,10.0,"SELECT COUNT(DISTINCT loan_account_id) AS loans_written_off
+FROM fct_loans_monthly
+WHERE write_off_flag = TRUE
+  AND month_start <= '2026-06-01';"
+dev-15,B_ai_ready,True,correct,10.0,10.0,"SELECT COUNT(DISTINCT loan_account_id) AS loans_written_off
+FROM fct_loans_monthly
+WHERE write_off_flag = TRUE
+  AND month_start <= '2026-06-01';"
+dev-16,A_poor_metadata,True,wrong_result,-253569.40,723988.69,"SELECT SUM(t.amount) AS net_transaction_volume_2024
+FROM fct_transactions t
+JOIN dim_date d ON t.transaction_date = d.date_key
+WHERE d.year = 2024;"
+dev-16,B_ai_ready,True,wrong_result,580332.14,723988.69,"SELECT SUM(ABS(amount)) AS total_transaction_volume
+FROM fct_transactions
+WHERE EXTRACT(YEAR FROM transaction_date) = 2024"
+dev-17,A_poor_metadata,True,inappropriate_refusal,,23.0,
+dev-17,B_ai_ready,True,inappropriate_refusal,,23.0,
+dev-18,A_poor_metadata,True,wrong_result,-1129274.28,3039189.26,"SELECT
+  SUM(amount) AS total_transaction_volume
+FROM fct_transactions
+WHERE EXTRACT(YEAR FROM transaction_date) = 2025;"
+dev-18,B_ai_ready,True,inappropriate_refusal,,3039189.26,
+dev-19,A_poor_metadata,True,wrong_result,-253569.40,580332.14,"SELECT SUM(amount) AS total_transaction_volume
+FROM fct_transactions
+WHERE EXTRACT(YEAR FROM transaction_date) = 2024;"
+dev-19,B_ai_ready,True,correct,580332.14,580332.14,"SELECT SUM(ABS(amount)) AS transaction_volume
+FROM fct_transactions
+WHERE EXTRACT(YEAR FROM transaction_date) = 2024"
+dev-20,A_poor_metadata,True,wrong_result,557.0,597.0,"SELECT COUNT(*) AS transaction_count
+FROM fct_transactions
+WHERE EXTRACT(YEAR FROM transaction_date) = 2024;"
+dev-20,B_ai_ready,True,wrong_result,557.0,597.0,SELECT COUNT(*) FROM fct_transactions WHERE EXTRACT(YEAR FROM transaction_date) = 2024
+dev-21,A_poor_metadata,True,wrong_result,2628.0,2884.0,"SELECT COUNT(*) AS transaction_count
+FROM fct_transactions
+WHERE EXTRACT(YEAR FROM transaction_date) = 2025;"
+dev-21,B_ai_ready,True,inappropriate_refusal,,2884.0,
+dev-22,A_poor_metadata,True,wrong_result,-104875.44,223804.08,"SELECT SUM(amount) AS total_transaction_volume
+FROM fct_transactions
+WHERE home_branch_name = 'Mississauga West'
+  AND EXTRACT(YEAR FROM transaction_date) = 2025;"
+dev-22,B_ai_ready,True,correct,223804.08,223804.08,"SELECT SUM(ABS(amount)) AS transaction_volume
+FROM fct_transactions
+WHERE home_branch_name = 'Mississauga West'
+  AND EXTRACT(YEAR FROM transaction_date) = 2025"
+dev-23,A_poor_metadata,True,wrong_result,607.0,631.0,"SELECT COUNT(*) AS transaction_count
+FROM fct_transactions
+WHERE transaction_branch_name = 'Kanata'
+  AND EXTRACT(YEAR FROM transaction_date) = 2025;"
+dev-23,B_ai_ready,True,wrong_result,607.0,631.0,"SELECT COUNT(*)
+FROM fct_transactions
+WHERE transaction_branch_name = 'Kanata'
+  AND EXTRACT(YEAR FROM transaction_date) = 2025"
+dev-24,A_poor_metadata,True,wrong_result,-227623.95,495368.37,"SELECT SUM(amount) AS total_transaction_volume
+FROM fct_transactions
+WHERE home_branch_name = 'Brampton North'
+  AND EXTRACT(YEAR FROM transaction_date) = 2025;"
+dev-24,B_ai_ready,True,correct,495368.37,495368.37,"SELECT SUM(ABS(amount)) AS total_transaction_volume
+FROM fct_transactions
+WHERE home_branch_name = 'Brampton North'
+  AND EXTRACT(YEAR FROM transaction_date) = 2025"
+oos-dev-01,A_poor_metadata,False,appropriate_refusal,,,
+oos-dev-01,B_ai_ready,False,appropriate_refusal,,,
+oos-dev-02,A_poor_metadata,False,appropriate_refusal,,,
+oos-dev-02,B_ai_ready,False,appropriate_refusal,,,
+oos-dev-03,A_poor_metadata,False,appropriate_refusal,,,
+oos-dev-03,B_ai_ready,False,appropriate_refusal,,,
+oos-dev-04,A_poor_metadata,False,appropriate_refusal,,,
+oos-dev-04,B_ai_ready,False,appropriate_refusal,,,
