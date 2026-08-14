@@ -1,0 +1,37 @@
+relationship 05db691a-4990-7bd3-ad66-02ae6ffeb0ee
+	fromColumn: fct_transactions.customer_id
+	toColumn: dim_customers.customer_id
+
+relationship 1c36f078-7687-54e9-a823-64d4d0b385a1
+	fromColumn: fct_account_balances_monthly.customer_id
+	toColumn: dim_customers.customer_id
+
+relationship 5cafb03d-6e82-cc9d-eb80-884be6d1973c
+	fromColumn: fct_loans_monthly.customer_id
+	toColumn: dim_customers.customer_id
+
+relationship 5c1fc0e0-b31c-d6f6-f4c5-9a88445930a1
+	fromColumn: fct_interest_monthly.customer_id
+	toColumn: dim_customers.customer_id
+
+relationship f636899b-f49e-8b3e-257e-45baf99b0950
+	fromColumn: fct_transactions.transaction_date
+	toColumn: dim_dates.date_key
+
+relationship 2d65aee2-c468-50f4-5607-627922e455ae
+	isActive: false
+	fromColumn: fct_transactions.posting_date
+	toColumn: dim_dates.date_key
+
+relationship 7ef2fcb1-7c9b-7d61-4e63-ae5f3d65b9f9
+	fromColumn: fct_account_balances_monthly.month_start
+	toColumn: dim_dates.date_key
+
+relationship ae82d331-4162-9f57-a24f-3a637cdd2fa6
+	fromColumn: fct_loans_monthly.month_start
+	toColumn: dim_dates.date_key
+
+relationship e2fe2350-44bb-64c3-1f79-c9b209007754
+	fromColumn: fct_interest_monthly.month_start
+	toColumn: dim_dates.date_key
+

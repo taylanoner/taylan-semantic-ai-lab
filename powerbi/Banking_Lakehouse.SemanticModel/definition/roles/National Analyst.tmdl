@@ -1,0 +1,5 @@
+role 'National Analyst'
+	modelPermission: read
+
+	annotation PBI_Id = ca916f21d7774fa6a706d0966cac16bd
+

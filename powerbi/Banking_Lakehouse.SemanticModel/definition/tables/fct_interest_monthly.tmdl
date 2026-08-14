@@ -1,0 +1,111 @@
+table fct_interest_monthly
+	lineageTag: 7f2cd4a2-5eaa-4001-86a5-1ec5b7f5e45a
+
+	measure 'Net Interest Income' = SUM(fct_interest_monthly[interest_income]) - SUM(fct_interest_monthly[interest_expense])
+		displayFolder: Metrics
+		lineageTag: 2b48e750-96d9-4153-983b-3a1c39452d6d
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Net Interest Margin' = DIVIDE([Net Interest Income], SUM(fct_interest_monthly[outstanding_loan_balance]))
+		formatString: 0.000%;-0.000%;0.000%
+		displayFolder: Metrics
+		lineageTag: 4e3ffc8f-db37-49b5-b9e3-f00a3449ea27
+
+	column account_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: 983092bf-1375-4fd4-b84b-8dcfff183c1b
+		summarizeBy: sum
+		sourceColumn: account_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column month_start
+		dataType: dateTime
+		formatString: Long Date
+		sourceProviderType: date
+		lineageTag: 82bdaba7-3afa-4df4-9da5-422ea4206b22
+		summarizeBy: none
+		sourceColumn: month_start
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column interest_income
+		dataType: double
+		sourceProviderType: decimal(12, 2)
+		displayFolder: Metrics
+		lineageTag: 0f37d9a2-71ee-410e-b09c-fb6682ea91d3
+		summarizeBy: sum
+		sourceColumn: interest_income
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column interest_expense
+		dataType: double
+		sourceProviderType: decimal(12, 2)
+		displayFolder: Metrics
+		lineageTag: 8cf5412e-236f-4cfe-bfde-a31e0d609e1d
+		summarizeBy: sum
+		sourceColumn: interest_expense
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column outstanding_loan_balance
+		dataType: double
+		sourceProviderType: decimal(12, 2)
+		displayFolder: Metrics
+		lineageTag: d5b04b34-b8b2-487b-aeb2-326641379c2e
+		summarizeBy: sum
+		sourceColumn: outstanding_loan_balance
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column customer_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: 29408744-29ef-42c9-ac83-90bd54f7f817
+		summarizeBy: none
+		sourceColumn: customer_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column product_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: 5003a293-b888-485b-b5d4-a8da43260f8b
+		summarizeBy: sum
+		sourceColumn: product_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fct_interest_monthly = m
+		mode: directQuery
+		source =
+				let
+				    Source = Sql.Databases("nxpwprhd3eruhpqypjj3ickbom-emnbxli7xgguvne6h4apo6rvja.datawarehouse.fabric.microsoft.com"),
+				    banking_lakehouse = Source{[Name="banking_lakehouse"]}[Data],
+				    dbo_fct_interest_monthly = banking_lakehouse{[Schema="dbo",Item="fct_interest_monthly"]}[Data]
+				in
+				    dbo_fct_interest_monthly
+

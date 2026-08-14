@@ -1,0 +1,27 @@
+model Model
+	culture: en-AU
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-CM
+	valueFilterBehavior: independent
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_QueryOrder = ["fct_transactions","fct_account_balances_monthly","fct_loans_monthly","dim_customers","dim_dates","fct_interest_monthly"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table fct_transactions
+ref table fct_account_balances_monthly
+ref table fct_loans_monthly
+ref table dim_customers
+ref table dim_dates
+ref table fct_interest_monthly
+
+ref role 'National Analyst'
+ref role 'Branch Manager'
+
+ref cultureInfo en-AU
+

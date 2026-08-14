@@ -9,3 +9,8 @@ dbt_packages/
 logs/
 .user.yml
 fabric_export/
+
+# PBIP: keep the TMDL/JSON definitions (that's the point), ignore local cache/settings
+**/.pbi/cache.abf
+**/.pbi/localSettings.json
+*.pbix
