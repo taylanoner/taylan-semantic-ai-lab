@@ -1,0 +1,183 @@
+table fct_transactions
+	lineageTag: 0658466f-f979-42d7-a807-63e6fd2cded6
+
+	measure 'Transaction Volume' = SUMX(fct_transactions, ABS(fct_transactions[amount]))
+		displayFolder: Metrics
+		lineageTag: 2efa2d8a-7a1a-4e59-b475-4b284fba58df
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Net Fee Revenue' = CALCULATE(-SUM(fct_transactions[amount]), fct_transactions[Transaction Type]="fee", fct_transactions[fee_waived]=FALSE)
+		displayFolder: Metrics
+		lineageTag: d18c0157-7514-40e1-a393-3a8cfcfeccd9
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column transaction_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 83406f7f-c2e7-4924-9dce-64352dc0a9fd
+		summarizeBy: sum
+		sourceColumn: transaction_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column account_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 5b23c1f6-ee34-42a7-af96-0efce6061cc3
+		summarizeBy: sum
+		sourceColumn: account_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column transaction_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: dc1d83c1-2009-4d16-9100-98217885bdc7
+		summarizeBy: none
+		sourceColumn: transaction_date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column posting_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 7c181386-ed8e-40d0-9253-503c6a20a183
+		summarizeBy: none
+		sourceColumn: posting_date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Transaction Type'
+		dataType: string
+		lineageTag: 9b415277-313e-4a3b-b679-e009f2929583
+		summarizeBy: none
+		sourceColumn: Transaction Type
+
+		annotation SummarizationSetBy = Automatic
+
+	column amount
+		dataType: double
+		isHidden
+		lineageTag: c2545e61-14f4-4192-a01c-381fe3f8e0ae
+		summarizeBy: sum
+		sourceColumn: amount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column fee_waived
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 3ce8b265-2fd2-4534-bccd-5875dca38626
+		summarizeBy: none
+		sourceColumn: fee_waived
+
+		annotation SummarizationSetBy = Automatic
+
+	column transaction_branch_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 7c79f826-9b26-43bf-8eb1-ee546f6f96a2
+		summarizeBy: sum
+		sourceColumn: transaction_branch_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column transaction_branch_name
+		dataType: string
+		lineageTag: 34d49b83-8ac6-4514-b2bf-da2ca1a4e234
+		summarizeBy: none
+		sourceColumn: transaction_branch_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column transaction_region
+		dataType: string
+		lineageTag: ad7a15d2-28f5-49ed-8e8e-6d5520140d1e
+		summarizeBy: none
+		sourceColumn: transaction_region
+
+		annotation SummarizationSetBy = Automatic
+
+	column home_branch_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 005470af-4e73-480a-bb51-1fe93c628471
+		summarizeBy: sum
+		sourceColumn: home_branch_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column home_branch_name
+		dataType: string
+		lineageTag: 7f3c360a-edc6-4bea-8efd-591876ce3f27
+		summarizeBy: none
+		sourceColumn: home_branch_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column home_region
+		dataType: string
+		lineageTag: 824cac94-dbbe-40ad-ab5d-4d07bf32893f
+		summarizeBy: none
+		sourceColumn: home_region
+
+		annotation SummarizationSetBy = Automatic
+
+	column customer_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 657295c8-98a3-4817-a72f-0fd2be626ae6
+		summarizeBy: none
+		sourceColumn: customer_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column product_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 3b225d3c-6dbf-4ebc-91cf-806a63912d4a
+		summarizeBy: sum
+		sourceColumn: product_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fct_transactions = m
+		mode: import
+		source =
+				let
+				    Source = Sql.Database("nxpwprhd3eruhpqypjj3ickbom-emnbxli7xgguvne6h4apo6rvja.datawarehouse.fabric.microsoft.com", "banking_lakehouse"),
+				    dbo_fct_transactions = Source{[Schema="dbo",Item="fct_transactions"]}[Data],
+				    #"Renamed Columns" = Table.RenameColumns(dbo_fct_transactions,{{"transaction_type", "Transaction Type"}})
+				in
+				    #"Renamed Columns"
+
+	annotation PBI_ResultType = Table
+

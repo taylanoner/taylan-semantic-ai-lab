@@ -1,0 +1,99 @@
+table fct_loans_monthly
+	lineageTag: 4e9e35c2-3abd-4f1f-aa3d-119cf140bcf7
+
+	measure 'Delinquency Rate 30D' = DIVIDE(CALCULATE(COUNTROWS(fct_loans_monthly), fct_loans_monthly[days_past_due]>=30, fct_loans_monthly[write_off_flag]=FALSE), CALCULATE(COUNTROWS(fct_loans_monthly), fct_loans_monthly[write_off_flag]=FALSE))
+		lineageTag: 2e385d8d-2470-4251-bde5-08a5c8a0b16b
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Delinquency Rate 90D' = DIVIDE(CALCULATE(COUNTROWS(fct_loans_monthly), fct_loans_monthly[days_past_due]>=90, fct_loans_monthly[write_off_flag]=FALSE), CALCULATE(COUNTROWS(fct_loans_monthly), fct_loans_monthly[write_off_flag]=FALSE))
+		lineageTag: e0ad65b6-3d8d-4298-b417-a7a69af0623c
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'Charge-off Rate' = DIVIDE(CALCULATE(COUNTROWS(fct_loans_monthly), fct_loans_monthly[write_off_flag]=TRUE), COUNTROWS(fct_loans_monthly))
+		lineageTag: 11cc7536-6d5d-4f06-9928-b10f2f49cae6
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column loan_account_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: 1439baa0-1b81-42e0-ab55-5c1931c4be15
+		summarizeBy: sum
+		sourceColumn: loan_account_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column month_start
+		dataType: dateTime
+		formatString: Long Date
+		sourceProviderType: date
+		lineageTag: fe0382fd-e7e0-45f9-8d81-d1dac8dc3c7f
+		summarizeBy: none
+		sourceColumn: month_start
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column days_past_due
+		dataType: int64
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: 2e062bb2-091f-483f-b83f-8a7966017e26
+		summarizeBy: sum
+		sourceColumn: days_past_due
+
+		annotation SummarizationSetBy = Automatic
+
+	column customer_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: e7642244-251f-4904-89f0-5c9cfe0fd880
+		summarizeBy: none
+		sourceColumn: customer_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column product_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: f398cdde-17a5-4f2b-b026-7330ffabe1f0
+		summarizeBy: sum
+		sourceColumn: product_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column write_off_flag
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		sourceProviderType: bit
+		lineageTag: 30c3271b-ada8-4b1a-80ed-9222b4fff7f0
+		summarizeBy: none
+		sourceColumn: write_off_flag
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fct_loans_monthly = m
+		mode: directQuery
+		source =
+				let
+				    Source = Sql.Databases("nxpwprhd3eruhpqypjj3ickbom-emnbxli7xgguvne6h4apo6rvja.datawarehouse.fabric.microsoft.com"),
+				    banking_lakehouse = Source{[Name="banking_lakehouse"]}[Data],
+				    dbo_fct_loans_monthly = banking_lakehouse{[Schema="dbo",Item="fct_loans_monthly"]}[Data]
+				in
+				    dbo_fct_loans_monthly
+

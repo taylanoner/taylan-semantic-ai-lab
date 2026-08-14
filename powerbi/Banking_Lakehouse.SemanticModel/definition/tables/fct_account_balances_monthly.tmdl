@@ -1,0 +1,90 @@
+table fct_account_balances_monthly
+	lineageTag: 84a4881a-a087-48fc-8b8c-e22813ae2b18
+
+	measure 'Average Daily Balance' = AVERAGE(fct_account_balances_monthly[avg_daily_balance])
+		displayFolder: Metrics
+		lineageTag: 809807e9-a36d-49f2-83d1-88ddbb3c84be
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column account_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: 473be969-d249-4da0-ad19-defaf1bd9318
+		summarizeBy: sum
+		sourceColumn: account_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column customer_id
+		dataType: int64
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: 7a63160c-fbcf-40f4-8b91-d3479a6f2ce9
+		summarizeBy: none
+		sourceColumn: customer_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column product_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: f9440827-466c-425f-86b7-55dfd4cc4a5c
+		summarizeBy: sum
+		sourceColumn: product_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column month_start
+		dataType: dateTime
+		formatString: Long Date
+		sourceProviderType: date
+		lineageTag: 47ad9ea2-d617-40e3-97a8-3ac7beb1c7ae
+		summarizeBy: none
+		sourceColumn: month_start
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column avg_daily_balance
+		dataType: double
+		sourceProviderType: float
+		displayFolder: Metrics
+		lineageTag: f2a4c803-6f3c-4eb8-a00f-79ccddb4aa58
+		summarizeBy: sum
+		sourceColumn: avg_daily_balance
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column month_end_balance
+		dataType: double
+		sourceProviderType: decimal(12, 2)
+		lineageTag: d4d5cd00-93b1-452f-aa71-f3d5fa7ad4dc
+		summarizeBy: sum
+		sourceColumn: month_end_balance
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition fct_account_balances_monthly = m
+		mode: directQuery
+		source =
+				let
+				    Source = Sql.Databases("nxpwprhd3eruhpqypjj3ickbom-emnbxli7xgguvne6h4apo6rvja.datawarehouse.fabric.microsoft.com"),
+				    banking_lakehouse = Source{[Name="banking_lakehouse"]}[Data],
+				    dbo_fct_account_balances_monthly = banking_lakehouse{[Schema="dbo",Item="fct_account_balances_monthly"]}[Data]
+				in
+				    dbo_fct_account_balances_monthly
+

@@ -1,0 +1,97 @@
+table dim_customers
+	lineageTag: c910ecd7-a100-4428-ad45-0da09cf7e17f
+
+	measure 'Active Customer Count' = CALCULATE(DISTINCTCOUNT(dim_customers[customer_id]), dim_customers[is_active]=TRUE)
+		formatString: 0
+		displayFolder: Metrics
+		lineageTag: 0b831a56-a24e-4f4c-9a91-ce7f34ece98d
+
+	measure 'Customer Inactivity Rate' = DIVIDE(CALCULATE(DISTINCTCOUNT(dim_customers[customer_id]), dim_customers[is_active]=FALSE), DISTINCTCOUNT(dim_customers[customer_id]))
+		displayFolder: Metrics
+		lineageTag: e8bd599b-effd-4430-96e0-a90bd249e5c9
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column customer_id
+		dataType: int64
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: 2c68f52c-0204-4480-aafa-f9084c1de244
+		summarizeBy: none
+		sourceColumn: customer_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Customer Name'
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 175bf763-20fd-42d9-bb95-7e3296d8b8e8
+		summarizeBy: none
+		sourceColumn: Customer Name
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_active
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		sourceProviderType: bit
+		lineageTag: 1527f7a7-1902-4629-ab0b-274ed6174ca9
+		summarizeBy: none
+		sourceColumn: is_active
+
+		annotation SummarizationSetBy = Automatic
+
+	column signup_date
+		dataType: dateTime
+		formatString: Long Date
+		sourceProviderType: date
+		lineageTag: f7fee9ac-bea1-4278-a7a8-2aae7dbbfe9e
+		summarizeBy: none
+		sourceColumn: signup_date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column home_branch_id
+		dataType: int64
+		isHidden
+		formatString: 0
+		sourceProviderType: int
+		lineageTag: 5a48f740-1910-4ebf-8e34-fb78390b5ad5
+		summarizeBy: sum
+		sourceColumn: home_branch_id
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column home_branch_name
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: c1ce5c67-65e4-4abf-b9fe-859ad4a74f2b
+		summarizeBy: none
+		sourceColumn: home_branch_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column Region
+		dataType: string
+		sourceProviderType: varchar(8000)
+		lineageTag: 4d913adb-ecb4-401d-984a-6937219613ba
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_customers = m
+		mode: directQuery
+		source =
+				let
+				    Source = Sql.Databases("nxpwprhd3eruhpqypjj3ickbom-emnbxli7xgguvne6h4apo6rvja.datawarehouse.fabric.microsoft.com"),
+				    banking_lakehouse = Source{[Name="banking_lakehouse"]}[Data],
+				    dbo_dim_customers = banking_lakehouse{[Schema="dbo",Item="dim_customers"]}[Data],
+				    #"Renamed Columns" = Table.RenameColumns(dbo_dim_customers,{{"customer_name", "Customer Name"}, {"region", "Region"}})
+				in
+				    #"Renamed Columns"
+
