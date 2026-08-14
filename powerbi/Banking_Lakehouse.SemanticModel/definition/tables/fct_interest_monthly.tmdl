@@ -8,10 +8,9 @@ table fct_interest_monthly
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	measure 'Net Interest Margin' = DIVIDE([Net Interest Income], SUM(fct_interest_monthly[outstanding_loan_balance]))
+		formatString: 0.000%;-0.000%;0.000%
 		displayFolder: Metrics
 		lineageTag: 4e3ffc8f-db37-49b5-b9e3-f00a3449ea27
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
 	column account_id
 		dataType: int64
