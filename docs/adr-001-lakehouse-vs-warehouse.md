@@ -70,3 +70,32 @@ currently needs that.
 - Re-running `src/build_warehouse.py` + `dbt build` and re-exporting to
   `fabric_export/` is the whole refresh path -- there is intentionally no
   transformation logic to maintain inside Fabric.
+
+## Update (Week 11): Power BI connects via SQL analytics endpoint DirectQuery, not Direct Lake
+
+The Lakehouse-vs-Warehouse decision above stands unchanged. What changed is
+*how the Power BI semantic model connects to the Lakehouse*.
+
+The natural choice given the reasoning above -- Direct Lake, reading Delta
+tables straight from OneLake -- ran into real reliability problems in Week
+11: after any source schema change (e.g. adding a column), Direct Lake's
+"Edit tables" / schema-refresh mechanism repeatedly failed to pick up the
+new schema, even after a full close/reopen of the semantic model. Root
+causes, confirmed against Microsoft's own documentation:
+
+1. Editing/schema-refreshing a Direct Lake semantic model is [documented as
+   unavailable on a free Power BI license](https://learn.microsoft.com/en-us/fabric/fundamentals/direct-lake-power-bi-desktop)
+   (no Pro/PPU license was purchased for this project -- see the plan's own
+   budget line for Power BI Pro, intentionally deferred).
+2. A related bug is tracked in Fabric's own known-issues list (schema not
+   loading on Direct Lake semantic model reload).
+
+Working around this by connecting via **Get Data > SQL Server** to the
+Lakehouse's SQL analytics endpoint, in **DirectQuery** mode, resolved it
+completely -- at the cost of losing Direct Lake's zero-copy/high-performance
+read path in favor of a standard DirectQuery round-trip per query. For this
+project's data volumes (hundreds to thousands of rows per table) that
+performance difference is not observable; if this were a production system
+at real scale, Direct Lake's reliability problems on a free license would be
+a stronger argument for buying the Pro license than for abandoning Direct
+Lake outright.

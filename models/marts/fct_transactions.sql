@@ -6,6 +6,8 @@
 select
     t.transaction_id,
     t.account_id,
+    a.customer_id,
+    a.product_id,
     t.transaction_date,
     t.posting_date,
     t.transaction_type,

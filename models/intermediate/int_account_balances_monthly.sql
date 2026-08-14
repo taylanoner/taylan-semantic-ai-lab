@@ -3,7 +3,7 @@
 -- rather than picking one silently.
 select
     account_id,
-    date_trunc('month', balance_date) as month_start,
+    cast(date_trunc('month', balance_date) as date) as month_start,
     avg(balance_amount) as avg_daily_balance,
     max(case when balance_date = last_day(balance_date) then balance_amount end) as month_end_balance
 from {{ ref('stg_daily_balances') }}

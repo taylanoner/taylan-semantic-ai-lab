@@ -4,7 +4,7 @@
 with ranked as (
     select
         loan_account_id,
-        date_trunc('month', payment_date) as month_start,
+        cast(date_trunc('month', payment_date) as date) as month_start,
         days_past_due,
         row_number() over (
             partition by loan_account_id, date_trunc('month', payment_date)
