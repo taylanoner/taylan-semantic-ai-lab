@@ -1,11 +1,13 @@
 table fct_loans_monthly
 	lineageTag: 4e9e35c2-3abd-4f1f-aa3d-119cf140bcf7
 
+	/// 30+ days past due, active loan portfolio only (written-off loans excluded).
 	measure 'Delinquency Rate 30D' = DIVIDE(CALCULATE(COUNTROWS(fct_loans_monthly), fct_loans_monthly[days_past_due]>=30, fct_loans_monthly[write_off_flag]=FALSE), CALCULATE(COUNTROWS(fct_loans_monthly), fct_loans_monthly[write_off_flag]=FALSE))
 		lineageTag: 2e385d8d-2470-4251-bde5-08a5c8a0b16b
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
+	/// 90+ days past due, active loan portfolio only (written-off loans excluded).
 	measure 'Delinquency Rate 90D' = DIVIDE(CALCULATE(COUNTROWS(fct_loans_monthly), fct_loans_monthly[days_past_due]>=90, fct_loans_monthly[write_off_flag]=FALSE), CALCULATE(COUNTROWS(fct_loans_monthly), fct_loans_monthly[write_off_flag]=FALSE))
 		lineageTag: e0ad65b6-3d8d-4298-b417-a7a69af0623c
 
