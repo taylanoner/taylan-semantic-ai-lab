@@ -13,6 +13,8 @@ annotation PBI_QueryOrder = ["fct_transactions","fct_account_balances_monthly","
 
 annotation PBI_ProTooling = ["DevMode"]
 
+annotation __TEdtr = 1
+
 ref table fct_transactions
 ref table fct_account_balances_monthly
 ref table fct_loans_monthly
@@ -22,6 +24,8 @@ ref table fct_interest_monthly
 
 ref role 'National Analyst'
 ref role 'Branch Manager'
+ref role 'Restricted User'
+ref role 'Retail Analyst'
 
 ref cultureInfo en-AU
 

@@ -1,7 +1,7 @@
 role 'Branch Manager'
 	modelPermission: read
 
-	tablePermission dim_customers = [home_branch_name] = "Head Office"
+	tablePermission dim_customers = [home_branch_name] == "Mississauga West"
 
 	annotation PBI_Id = 85060a98cfe342919c298743b922d4c8
 

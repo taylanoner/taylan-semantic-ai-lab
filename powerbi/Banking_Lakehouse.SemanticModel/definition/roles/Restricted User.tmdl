@@ -1,0 +1,16 @@
+role 'Restricted User'
+	modelPermission: read
+
+	tablePermission dim_customers = [Region] == "Eastern-ON"
+		metadataPermission: read
+
+		columnPermission 'Customer Name' = none
+
+	tablePermission fct_interest_monthly
+		metadataPermission: none
+
+	tablePermission fct_loans_monthly
+		metadataPermission: none
+
+	annotation PBI_Id = 3eda11e48bb54c358509adff6ee51b13
+

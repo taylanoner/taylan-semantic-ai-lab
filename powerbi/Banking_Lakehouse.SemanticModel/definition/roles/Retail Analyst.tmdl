@@ -1,0 +1,15 @@
+role 'Retail Analyst'
+	modelPermission: read
+
+	tablePermission fct_loans_monthly
+		metadataPermission: none
+
+	tablePermission dim_customers
+
+		columnPermission 'Customer Name' = none
+
+	tablePermission fct_interest_monthly
+		metadataPermission: none
+
+	annotation PBI_Id = d45fbff5cf014c02afe643420166e729
+
