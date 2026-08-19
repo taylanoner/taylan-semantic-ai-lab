@@ -1,0 +1,5 @@
+config,dev_in_scope_accuracy,holdout_in_scope_accuracy,holdout_out_of_scope_refusal_rate,n_dev_in_runs,n_holdout_in_runs,n_holdout_oos_runs
+1_raw,0.3194,0.3333,1.0,72,60,24
+2_raw_glossary,0.6944,0.7,1.0,72,60,24
+3_governed,0.2639,0.2333,1.0,72,60,24
+4_governed_ai_prep,0.5,0.4833,1.0,72,60,24
